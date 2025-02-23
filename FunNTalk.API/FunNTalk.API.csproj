@@ -13,4 +13,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FunNTalk.Domain\FunNTalk.Domain.csproj" />
+    <ProjectReference Include="..\FunNTalk.Infrastructure\FunNTalk.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunNTalk.API", "FunNTalk.API\FunNTalk.API.csproj", "{1C320E10-366A-429A-800E-D2AEA5D56F82}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FunNTalk.API", "FunNTalk.API\FunNTalk.API.csproj", "{1C320E10-366A-429A-800E-D2AEA5D56F82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunNTalk.Domain", "FunNTalk.Domain\FunNTalk.Domain.csproj", "{91044F03-69B8-47C1-9B5B-3CDE9D5558BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunNTalk.Infrastructure", "FunNTalk.Infrastructure\FunNTalk.Infrastructure.csproj", "{E6EDD9A5-97CF-4025-8261-D739BB492488}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{1C320E10-366A-429A-800E-D2AEA5D56F82}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C320E10-366A-429A-800E-D2AEA5D56F82}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C320E10-366A-429A-800E-D2AEA5D56F82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91044F03-69B8-47C1-9B5B-3CDE9D5558BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91044F03-69B8-47C1-9B5B-3CDE9D5558BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91044F03-69B8-47C1-9B5B-3CDE9D5558BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91044F03-69B8-47C1-9B5B-3CDE9D5558BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6EDD9A5-97CF-4025-8261-D739BB492488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6EDD9A5-97CF-4025-8261-D739BB492488}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6EDD9A5-97CF-4025-8261-D739BB492488}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6EDD9A5-97CF-4025-8261-D739BB492488}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
