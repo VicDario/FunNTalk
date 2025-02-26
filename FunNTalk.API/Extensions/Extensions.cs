@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection
 
 namespace FunNTalk.API.Extensions;
 
@@ -9,19 +9,8 @@ public static class Extensions
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
-        services.AddSignalR(signalR => signalR.EnableDetailedErrors = true);
+        services.ConfigureSignalR();
         services.AddLogging();
-        services.AddCors(options =>
-        {
-            options.AddDefaultPolicy(
-                builder =>
-                {
-                    builder.WithOrigins("https://127.0.0.1:4200")
-                        .AllowAnyHeader()
-                        .AllowCredentials()
-                        .AllowAnyMethod();
-                });
-        });
-
+        services.ConfigureCors();
     }
 }
