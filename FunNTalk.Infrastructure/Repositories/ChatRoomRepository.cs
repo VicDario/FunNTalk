@@ -25,10 +25,13 @@ public sealed class ChatRoomRepository : IChatRoomRepository
         return room;
     }
 
-    public void RemoveUserFromRoom(string roomName, string connectionId)
+    public UserEntity? RemoveUserFromRoom(string roomName, string connectionId)
     {
         _rooms.TryGetValue(roomName, out var room);
-        room?.Participants.RemoveAll(participant => participant.ConnectionId == connectionId);
+        var user = room?.Participants.Find(participant => participant.ConnectionId == connectionId);
+        if (user is null) return null;
+        room?.Participants.Remove(user);
+        return user;
     }
 
     public UserEntity? GetUserFromRoom(string roomName, string connectionId)
