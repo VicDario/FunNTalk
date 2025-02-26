@@ -6,9 +6,9 @@ using FunNTalk.Domain.Repositories;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-public class JoinRoomHandler(IHubContext<ChatHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<JoinRoomCommand>
+public class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<JoinRoomCommand>
 {
-    private readonly IHubContext<ChatHub> _hubContext = hubContext;
+    private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly IChatRoomRepository _chatRoomRepository = chatRoomRepository;
 
     public async Task Handle(JoinRoomCommand request, CancellationToken cancellationToken)

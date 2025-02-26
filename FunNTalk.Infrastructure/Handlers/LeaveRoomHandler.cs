@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-public class LeaveRoomHandler(IHubContext<ChatHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<LeaveRoomCommand>
+public class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<LeaveRoomCommand>
 {
-    private readonly IHubContext<ChatHub> _hubContext = hubContext;
+    private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly IChatRoomRepository _chatRoomRepository = chatRoomRepository;
 
     public async Task Handle(LeaveRoomCommand request, CancellationToken cancellationToken)

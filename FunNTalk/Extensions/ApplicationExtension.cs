@@ -17,6 +17,6 @@ public static class ApplicationExtension
         app.UseAuthorization();
         app.UseCors();
         app.MapControllers();
-        app.MapHub<ChatHub>("/chatHub");
+        app.MapHub<CommunicationHub>("/communicationHub");
     }
 }
