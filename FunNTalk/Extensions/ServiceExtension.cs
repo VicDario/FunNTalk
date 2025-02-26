@@ -10,7 +10,6 @@ public static class ServiceExtension
     public static void AppConfigure(this IServiceCollection services)
     {
         services.ApiConfigure();
-        services.DomainConfigure();
         services.InfrastructureConfigure();
     }
 }
