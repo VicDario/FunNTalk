@@ -1,7 +1,4 @@
-﻿using FunNTalk.Domain.Services;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace FunNTalk.Domain.Extensions;
+﻿namespace FunNTalk.Domain.Extensions;
 
 public static class Extensions
 {

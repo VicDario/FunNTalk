@@ -16,5 +16,4 @@ public static class SignalRExtension
                     options.PayloadSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                 });
         }
-    }
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using FunNTalk.API.Extensions;
-using FunNTalk.Domain.Extensions;
+﻿using FunNTalk.API.Extensions;
 using FunNTalk.Infrastructure.Extensions;
 
 namespace FunNTalk.Extensions;
