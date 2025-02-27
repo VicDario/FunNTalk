@@ -3,6 +3,7 @@ using FunNTalk.API.Commands;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using FunNTalk.Domain.Repositories;
+using FunNTalk.Domain.DTOs;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
@@ -15,6 +16,8 @@ public sealed class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IC
     {
         _chatRoomRepository.AddUserToRoom(request.RoomName, request.User);
         await _hubContext.Groups.AddToGroupAsync(request.User.ConnectionId, request.RoomName, cancellationToken);
-        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserJoined", request.User, cancellationToken: cancellationToken);
+
+        var userDto = new UserDto(request.User.Username, request.User.ConnectionId);
+        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserJoined", userDto, cancellationToken: cancellationToken);
     }
 }

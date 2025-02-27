@@ -23,8 +23,10 @@ public sealed class SendMessageHandler(IHubContext<CommunicationHub> hubContext,
             _logger.LogError("User not found in room {roomName}", request.RoomName);
             return;
         }
+
         var group = _hubContext.Clients.Group(request.RoomName);
-        var message = new MessageDto(new DateTime(), user.Username, request.Message);
+        var userDto = new UserDto(user.Username, user.ConnectionId);
+        var message = new MessageDto(new DateTime(), userDto, request.Message);
         await group.SendAsync("ReceiveMessage", message, cancellationToken: cancellationToken);
     }
 }

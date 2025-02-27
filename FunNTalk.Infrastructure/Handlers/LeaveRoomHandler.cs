@@ -1,5 +1,6 @@
 ﻿using FunNTalk.API.Commands;
 using FunNTalk.API.Hubs;
+using FunNTalk.Domain.DTOs;
 using FunNTalk.Domain.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
@@ -14,11 +15,11 @@ public sealed class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, I
     public async Task Handle(LeaveRoomCommand request, CancellationToken cancellationToken)
     {
         var user = _chatRoomRepository.RemoveUserFromRoom(request.RoomName, request.ConnectionId);
-        if (user == null)
-        {
-            return;
-        }
+        if (user == null) return;
+
         await _hubContext.Groups.RemoveFromGroupAsync(request.ConnectionId, request.RoomName, cancellationToken);
-        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserLeft", user.Username, cancellationToken: cancellationToken);
+        var userDto = new UserDto(user.Username, user.ConnectionId);
+        
+        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
     }
 }
