@@ -1,4 +1,4 @@
-﻿using FunNTalk.API.Hubs;
+﻿using FunNTalk.API.Extensions;
 
 namespace FunNTalk.Extensions;
 
@@ -16,7 +16,6 @@ public static class ApplicationExtension
 
         app.UseAuthorization();
         app.UseCors();
-        app.MapControllers();
-        app.MapHub<CommunicationHub>("/communicationHub");
+        app.ConfigureDomain();
     }
 }
