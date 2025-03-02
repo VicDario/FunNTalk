@@ -10,12 +10,11 @@ public static class CorsExtension
         {
             options.AddDefaultPolicy(
                 builder =>
-                {
-                    builder.WithOrigins("https://127.0.0.1:4200")
+                    builder.WithOrigins("https://fun-n-talk-1058570323303.us-central1.run.app")
                         .AllowAnyHeader()
                         .AllowCredentials()
-                        .AllowAnyMethod();
-                });
+                        .AllowAnyMethod()
+            );
         });
     }
 }
