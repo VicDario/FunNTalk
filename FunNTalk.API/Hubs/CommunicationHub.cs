@@ -63,6 +63,8 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
     {
         var connectionId = Context.ConnectionId;
         _logger.LogInformation("Disconnected {connectionId}", connectionId);
+        var command = new DisconnectedUserCommand(connectionId);
+        await _mediator.Send(command);
         await base.OnDisconnectedAsync(exception);
     }
 }
