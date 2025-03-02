@@ -10,10 +10,16 @@ public static class CorsExtension
         {
             options.AddDefaultPolicy(
                 builder =>
+                {
                     builder.WithOrigins("https://fun-n-talk-1058570323303.us-central1.run.app")
                         .AllowAnyHeader()
                         .AllowCredentials()
-                        .AllowAnyMethod()
+                        .AllowAnyMethod();
+                    builder.WithOrigins("https://fun-n-talk-front.vercel.app")
+                        .AllowAnyHeader()
+                        .AllowCredentials()
+                        .AllowAnyMethod();
+                }
             );
         });
     }
