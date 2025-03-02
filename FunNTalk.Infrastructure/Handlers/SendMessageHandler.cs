@@ -25,7 +25,7 @@ public sealed class SendMessageHandler(IHubContext<CommunicationHub> hubContext,
         }
 
         var group = _hubContext.Clients.Group(request.RoomName);
-        var userDto = new UserDto(user.Username, user.ConnectionId);
+        var userDto = UserDto.FromEntity(user);
         var message = new MessageDto(DateTime.Now, userDto, request.Message);
         await group.SendAsync("ReceiveMessage", message, cancellationToken: cancellationToken);
     }

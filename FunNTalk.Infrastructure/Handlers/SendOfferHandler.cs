@@ -26,7 +26,7 @@ public sealed class SendOfferHandler(IHubContext<CommunicationHub> hubContext, I
             return;
         }
 
-        var userDto = new UserDto(user.Username, user.ConnectionId);
+        var userDto = UserDto.FromEntity(user);
         var signalDto = new WebRtcSignalDto(userDto, request.Offer);
 
         await _hubContext.Clients.GroupExcept(request.RoomName, request.ConnectionId).SendAsync("ReceiveOffer", signalDto, cancellationToken);

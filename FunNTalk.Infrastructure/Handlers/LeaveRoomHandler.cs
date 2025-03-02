@@ -18,8 +18,7 @@ public sealed class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, I
         if (user == null) return;
 
         await _hubContext.Groups.RemoveFromGroupAsync(request.ConnectionId, request.RoomName, cancellationToken);
-        var userDto = new UserDto(user.Username, user.ConnectionId);
-
+        var userDto = UserDto.FromEntity(user);
         await _hubContext.Clients.Group(request.RoomName).SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
     }
 }
