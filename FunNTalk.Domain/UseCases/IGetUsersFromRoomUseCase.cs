@@ -1,8 +1,8 @@
-﻿using FunNTalk.Domain.Entities;
+﻿using FunNTalk.Domain.DTOs;
 
 namespace FunNTalk.Domain.UseCases;
 
 public interface IGetUsersFromRoomUseCase
 {
-    List<UserEntity>? Execute(string connectionId);
+    List<UserDto>? Execute(string connectionId);
 }
