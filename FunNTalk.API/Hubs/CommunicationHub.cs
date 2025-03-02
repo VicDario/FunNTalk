@@ -15,7 +15,7 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
     {
         _logger.LogInformation("user {username} joins to room {roomName}", username, roomName);
         var connectionId = Context.ConnectionId;
-        var user = new UserEntity(username, connectionId);
+        var user = new UserEntity(username, connectionId, roomName);
         await _mediator.Send(new JoinRoomCommand(roomName, user));
     }
 
