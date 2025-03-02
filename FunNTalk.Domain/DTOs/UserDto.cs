@@ -1,3 +1,11 @@
-﻿namespace FunNTalk.Domain.DTOs;
+﻿using FunNTalk.Domain.Entities;
 
-public record UserDto(string Username, string ConnectionId);
+namespace FunNTalk.Domain.DTOs;
+
+public record UserDto(string Username, string ConnectionId)
+{
+    public static UserDto FromEntity(UserEntity user)
+    {
+        return new UserDto(user.Username, user.ConnectionId);
+    }
+};
