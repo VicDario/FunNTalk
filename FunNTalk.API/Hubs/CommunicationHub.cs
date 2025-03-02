@@ -3,6 +3,7 @@ using FunNTalk.API.Commands;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+
 namespace FunNTalk.API.Hubs;
 
 public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logger) : Hub
@@ -12,7 +13,7 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
 
     public async Task JoinRoom(string roomName, string username)
     {
-        _logger.LogInformation("Join to room {roomName}, user {username}", roomName, username);
+        _logger.LogInformation("user {username} joins to room {roomName}", username, roomName);
         var connectionId = Context.ConnectionId;
         var user = new UserEntity(username, connectionId);
         await _mediator.Send(new JoinRoomCommand(roomName, user));
@@ -21,7 +22,7 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
     public async Task SendMessage(string roomName, string message)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("ConnectionId {connectionId} send message to room {roomName}", connectionId, roomName);
+        _logger.LogInformation("ConnectionId {connectionId} sends message to room {roomName}", connectionId, roomName);
         var command = new SendMessageCommand(connectionId, roomName, message);
         await _mediator.Send(command);
     }
@@ -30,29 +31,38 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
     {
         var connectionId = Context.ConnectionId;
         _logger.LogInformation("Connection {connectionId} leaves room {roomName}", connectionId, roomName);
-        var command = new LeaveRoomCommand(connectionId, connectionId);
+        var command = new LeaveRoomCommand(roomName, connectionId);
         await _mediator.Send(command);
     }
 
-    public async Task SendOffer(string roomName, string connectionId, string offer)
+    public async Task SendOffer(string roomName, string offer)
     {
-        await Clients.Group(roomName).SendAsync("ReceiveOffer", connectionId, offer);
+        var connectionId = Context.ConnectionId;
+        _logger.LogInformation("Connection {connectionId} sends offer to room {roomName}", connectionId, roomName);
+        var command = new SendOfferCommand(roomName, connectionId, offer);
+        await _mediator.Send(command);
     }
 
-    public async Task SendAnswer(string roomName, string connectionId, string answer)
+    public async Task SendAnswer(string roomName, string targetConnectionId, string answer)
     {
-        await Clients.Group(roomName).SendAsync("ReceiveAnswer", connectionId, answer);
+        var connectionId = Context.ConnectionId;
+        _logger.LogInformation("Connection {connectionId} sends answer to room {roomName}", connectionId, roomName);
+        var command = new SendAnswerCommand(roomName, connectionId, targetConnectionId, answer);
+        await _mediator.Send(command);
     }
 
-    public async Task SendIceCandidate(string roomName, string connectionId, string candidate)
+    public async Task SendICECandidate(string roomName, string candidate)
     {
-        await Clients.Group(roomName).SendAsync("ReceiveIceCandidate", connectionId, candidate);
+        var connectionId = Context.ConnectionId;
+        _logger.LogInformation("Connection {connectionId} sends ice candidate to room {roomName}", connectionId, roomName);
+        var command = new SendOfferCommand(roomName, connectionId, candidate);
+        await _mediator.Send(command);
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        //var connectionId = Context.ConnectionId;
-
+        var connectionId = Context.ConnectionId;
+        _logger.LogInformation("Disconnected {connectionId}", connectionId);
         await base.OnDisconnectedAsync(exception);
     }
 }
