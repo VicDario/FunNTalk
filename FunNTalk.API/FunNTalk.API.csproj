@@ -17,9 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <Folder Include="Extensions\" />
-	  <Folder Include="Commands\" />
-	  <Folder Include="Hubs\" />
+	<Folder Include="Controllers\" />
+	<Folder Include="Extensions\" />
+    <Folder Include="Commands\" />
+	<Folder Include="Hubs\" />
   </ItemGroup>
 
   <PropertyGroup>
