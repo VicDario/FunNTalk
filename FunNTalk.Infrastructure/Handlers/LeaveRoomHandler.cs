@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-public sealed class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<LeaveRoomCommand>
+public sealed class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository)
+    : IRequestHandler<LeaveRoomCommand>
 {
     private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly IChatRoomRepository _chatRoomRepository = chatRoomRepository;

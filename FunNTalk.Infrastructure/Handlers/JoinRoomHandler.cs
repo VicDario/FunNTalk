@@ -7,7 +7,8 @@ using FunNTalk.Domain.DTOs;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-public sealed class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<JoinRoomCommand>
+public sealed class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository)
+    : IRequestHandler<JoinRoomCommand>
 {
     private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly IChatRoomRepository _chatRoomRepository = chatRoomRepository;

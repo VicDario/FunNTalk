@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-public sealed class SendMessageHandler(IHubContext<CommunicationHub> hubContext, ILogger<SendMessageHandler> logger, IChatRoomRepository chatRoomRepository) : IRequestHandler<SendMessageCommand>
+public sealed class SendMessageHandler(IHubContext<CommunicationHub> hubContext, ILogger<SendMessageHandler> logger, IChatRoomRepository chatRoomRepository)
+    : IRequestHandler<SendMessageCommand>
 {
     private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly ILogger<SendMessageHandler> _logger = logger;

@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace FunNTalk.Infrastructure.Handlers;
 
-class DisconnectedUserHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository) : IRequestHandler<DisconnectedUserCommand>
+public sealed class DisconnectedUserHandler(IHubContext<CommunicationHub> hubContext, IChatRoomRepository chatRoomRepository)
+    : IRequestHandler<DisconnectedUserCommand>
 {
     private readonly IHubContext<CommunicationHub> _hubContext = hubContext;
     private readonly IChatRoomRepository _chatRoomRepository = chatRoomRepository;
