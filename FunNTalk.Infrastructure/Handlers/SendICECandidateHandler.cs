@@ -26,7 +26,7 @@ public sealed class SendICECandidateHandler(IHubContext<CommunicationHub> hubCon
         }
 
         var userDto = UserDto.FromEntity(user);
-        var signalDto = new WebRtcSignalDto(userDto, request.Candidate);
+        var signalDto = new WebRtcCandidate(userDto, request.Candidate);
 
         await _hubContext.Clients.GroupExcept(request.RoomName, request.ConnectionId).SendAsync("ReceiveICECandidate", signalDto, cancellationToken);
     }
