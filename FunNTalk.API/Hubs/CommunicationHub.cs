@@ -3,6 +3,7 @@ using FunNTalk.API.Commands;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using FunNTalk.Domain.DTOs;
 
 namespace FunNTalk.API.Hubs;
 
@@ -35,7 +36,7 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
         await _mediator.Send(command);
     }
 
-    public async Task SendOffer(string roomName, string offer)
+    public async Task SendOffer(string roomName, WebRtcDto offer)
     {
         var connectionId = Context.ConnectionId;
         _logger.LogInformation("Connection {connectionId} sends offer to room {roomName}", connectionId, roomName);
@@ -43,7 +44,7 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
         await _mediator.Send(command);
     }
 
-    public async Task SendAnswer(string roomName, string targetConnectionId, string answer)
+    public async Task SendAnswer(string roomName, string targetConnectionId, WebRtcDto answer)
     {
         var connectionId = Context.ConnectionId;
         _logger.LogInformation("Connection {connectionId} sends answer to room {roomName}", connectionId, roomName);
