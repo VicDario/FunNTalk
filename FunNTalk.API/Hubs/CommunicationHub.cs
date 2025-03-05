@@ -51,11 +51,11 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
         await _mediator.Send(command);
     }
 
-    public async Task SendICECandidate(string roomName, string candidate)
+    public async Task SendICECandidate(string roomName, string targetConnectionId, string candidate)
     {
         var connectionId = Context.ConnectionId;
         _logger.LogInformation("Connection {connectionId} sends ice candidate to room {roomName}", connectionId, roomName);
-        var command = new SendOfferCommand(roomName, connectionId, candidate);
+        var command = new SendICECandidateCommand(roomName, connectionId, targetConnectionId, candidate);
         await _mediator.Send(command);
     }
 
