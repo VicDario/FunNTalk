@@ -2,4 +2,4 @@
 
 namespace FunNTalk.API.Commands;
 
-public record LeaveRoomCommand(string RoomName, string ConnectionId) : IRequest;
+public record LeaveRoomCommand(string ConnectionId) : IRequest;

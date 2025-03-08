@@ -17,18 +17,19 @@ public sealed class SendOfferHandler(IHubContext<CommunicationHub> hubContext, I
 
     public async Task Handle(SendOfferCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Sending WebRTC offer from {ConnectionId} in room {RoomName}", request.ConnectionId, request.RoomName);
+        _logger.LogInformation("Sending WebRTC offer from {ConnectionId}", request.ConnectionId);
 
-        var user = _chatRoomRepository.GetUserFromRoom(request.RoomName, request.ConnectionId);
+        var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null)
         {
-            _logger.LogError("User not found in room {RoomName}", request.RoomName);
+            _logger.LogError("User not found -> {ConnectionId}", request.ConnectionId);
             return;
         }
 
         var userDto = UserDto.FromEntity(user);
         var signalDto = new WebRtcSignalDto(userDto, request.Offer);
 
-        await _hubContext.Clients.GroupExcept(request.RoomName, request.ConnectionId).SendAsync("ReceiveOffer", signalDto, cancellationToken);
+        var group = _hubContext.Clients.GroupExcept(user.Room, request.ConnectionId);
+        await group.SendAsync("ReceiveOffer", signalDto, cancellationToken);
     }
 }

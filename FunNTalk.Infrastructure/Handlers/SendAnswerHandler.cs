@@ -19,16 +19,17 @@ public sealed class SendAnswerHandler(IHubContext<CommunicationHub> hubContext, 
     {
         _logger.LogInformation("Sending WebRTC Answer from {connectionId} to {targetConnectionId}", request.ConnectionId, request.TargetConnectionId);
 
-        var user = _chatRoomRepository.GetUserFromRoom(request.RoomName, request.ConnectionId);
+        var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null)
         {
-            _logger.LogError("User not found in room {RoomName}", request.RoomName);
+            _logger.LogError("User not found -> {ConnectionId}", request.ConnectionId);
             return;
         }
 
         var userDto = new UserDto(user.Username, user.ConnectionId);
         var signalDto = new WebRtcSignalDto(userDto, request.Answer);
 
-        await _hubContext.Clients.Client(request.TargetConnectionId).SendAsync("ReceiveAnswer", signalDto, cancellationToken);
+        var client = _hubContext.Clients.Client(request.TargetConnectionId);
+        await client.SendAsync("ReceiveAnswer", signalDto, cancellationToken);
     }
 }

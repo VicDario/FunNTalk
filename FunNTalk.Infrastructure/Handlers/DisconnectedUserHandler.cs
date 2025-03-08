@@ -21,6 +21,8 @@ public sealed class DisconnectedUserHandler(IHubContext<CommunicationHub> hubCon
 
         await _hubContext.Groups.RemoveFromGroupAsync(request.ConnectionId, user.Room, cancellationToken);
         var userDto = UserDto.FromEntity(user);
-        await _hubContext.Clients.Group(user.Room).SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
+
+        var group = _hubContext.Clients.Group(user.Room);
+        await group.SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
     }
 }

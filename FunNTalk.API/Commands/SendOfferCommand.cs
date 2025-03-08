@@ -3,4 +3,4 @@ using MediatR;
 
 namespace FunNTalk.API.Commands;
 
-public record SendOfferCommand(string RoomName, string ConnectionId, WebRtcDto Offer) : IRequest;
+public record SendOfferCommand(string ConnectionId, WebRtcDto Offer) : IRequest;

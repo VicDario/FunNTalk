@@ -19,6 +19,8 @@ public sealed class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IC
         await _hubContext.Groups.AddToGroupAsync(request.User.ConnectionId, request.RoomName, cancellationToken);
 
         var userDto = UserDto.FromEntity(request.User);
-        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserJoined", userDto, cancellationToken: cancellationToken);
+
+        var group = _hubContext.Clients.Group(request.RoomName);
+        await group.SendAsync("UserJoined", userDto, cancellationToken: cancellationToken);
     }
 }

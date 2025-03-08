@@ -17,15 +17,15 @@ public sealed class SendMessageHandler(IHubContext<CommunicationHub> hubContext,
 
     public async Task Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Sending message {message} to room {roomName}", request.Message, request.RoomName);
-        var user = _chatRoomRepository.GetUserFromRoom(request.RoomName, request.ConnectionId);
+        _logger.LogInformation("User {ConnectionId} sends message", request.ConnectionId);
+        var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null)
         {
-            _logger.LogError("User not found in room {roomName}", request.RoomName);
+            _logger.LogError("User not found -> {ConnectionId}", request.ConnectionId);
             return;
         }
 
-        var group = _hubContext.Clients.Group(request.RoomName);
+        var group = _hubContext.Clients.Group(user.Room);
         var userDto = UserDto.FromEntity(user);
         var message = new MessageDto(DateTime.Now, userDto, request.Message);
         await group.SendAsync("ReceiveMessage", message, cancellationToken: cancellationToken);

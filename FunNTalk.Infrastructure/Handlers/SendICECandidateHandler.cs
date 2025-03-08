@@ -17,17 +17,18 @@ public sealed class SendICECandidateHandler(IHubContext<CommunicationHub> hubCon
 
     public async Task Handle(SendICECandidateCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Sending WebRTC ICE candidate from {ConnectionId} in room {RoomName}", request.ConnectionId, request.RoomName);
-        var user = _chatRoomRepository.GetUserFromRoom(request.RoomName, request.ConnectionId);
+        _logger.LogInformation("Sending WebRTC ICE candidate from {ConnectionId}", request.ConnectionId);
+        var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null)
         {
-            _logger.LogError("User not found in room {RoomName}", request.RoomName);
+            _logger.LogError("User not found -> {ConnectionId}", request.ConnectionId);
             return;
         }
 
         var userDto = UserDto.FromEntity(user);
         var signalDto = new WebRtcCandidate(userDto, request.Candidate);
 
-        await _hubContext.Clients.GroupExcept(request.RoomName, request.ConnectionId).SendAsync("ReceiveICECandidate", signalDto, cancellationToken);
+        var group = _hubContext.Clients.GroupExcept(user.Room, request.ConnectionId);
+        await group.SendAsync("ReceiveICECandidate", signalDto, cancellationToken);
     }
 }

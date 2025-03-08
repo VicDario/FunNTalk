@@ -15,11 +15,14 @@ public sealed class LeaveRoomHandler(IHubContext<CommunicationHub> hubContext, I
 
     public async Task Handle(LeaveRoomCommand request, CancellationToken cancellationToken)
     {
-        var user = _chatRoomRepository.RemoveUserFromRoom(request.RoomName, request.ConnectionId);
+        var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null) return;
 
-        await _hubContext.Groups.RemoveFromGroupAsync(request.ConnectionId, request.RoomName, cancellationToken);
+        _chatRoomRepository.RemoveUserFromRoom(user.Room, request.ConnectionId);
+        await _hubContext.Groups.RemoveFromGroupAsync(request.ConnectionId, user.Room, cancellationToken);
         var userDto = UserDto.FromEntity(user);
-        await _hubContext.Clients.Group(request.RoomName).SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
+
+        var group = _hubContext.Clients.Group(user.Room);
+        await group.SendAsync("UserLeft", userDto, cancellationToken: cancellationToken);
     }
 }

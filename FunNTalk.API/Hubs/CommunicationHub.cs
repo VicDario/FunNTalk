@@ -20,43 +20,43 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
         await _mediator.Send(new JoinRoomCommand(roomName, user));
     }
 
-    public async Task SendMessage(string roomName, string message)
+    public async Task SendMessage(string message)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("ConnectionId {connectionId} sends message to room {roomName}", connectionId, roomName);
-        var command = new SendMessageCommand(connectionId, roomName, message);
+        _logger.LogInformation("ConnectionId {connectionId} sends message", connectionId);
+        var command = new SendMessageCommand(connectionId, message);
         await _mediator.Send(command);
     }
 
-    public async Task LeaveRoom(string roomName)
+    public async Task LeaveRoom()
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} leaves room {roomName}", connectionId, roomName);
-        var command = new LeaveRoomCommand(roomName, connectionId);
+        _logger.LogInformation("Connection {connectionId} leaves room", connectionId);
+        var command = new LeaveRoomCommand(connectionId);
         await _mediator.Send(command);
     }
 
-    public async Task SendOffer(string roomName, WebRtcDto offer)
+    public async Task SendOffer(WebRtcDto offer)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} sends offer to room {roomName}", connectionId, roomName);
-        var command = new SendOfferCommand(roomName, connectionId, offer);
+        _logger.LogInformation("Connection {connectionId} sends offer to room", connectionId);
+        var command = new SendOfferCommand(connectionId, offer);
         await _mediator.Send(command);
     }
 
-    public async Task SendAnswer(string roomName, string targetConnectionId, WebRtcDto answer)
+    public async Task SendAnswer(string targetConnectionId, WebRtcDto answer)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} sends answer to room {roomName}", connectionId, roomName);
-        var command = new SendAnswerCommand(roomName, connectionId, targetConnectionId, answer);
+        _logger.LogInformation("Connection {connectionId} sends answer", connectionId);
+        var command = new SendAnswerCommand(connectionId, targetConnectionId, answer);
         await _mediator.Send(command);
     }
 
-    public async Task SendICECandidate(string roomName, string targetConnectionId, string candidate)
+    public async Task SendICECandidate(string targetConnectionId, string candidate)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} sends ice candidate to room {roomName}", connectionId, roomName);
-        var command = new SendICECandidateCommand(roomName, connectionId, targetConnectionId, candidate);
+        _logger.LogInformation("Connection {connectionId} sends ice candidate to room", connectionId);
+        var command = new SendICECandidateCommand(connectionId, targetConnectionId, candidate);
         await _mediator.Send(command);
     }
 
