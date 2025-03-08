@@ -11,11 +11,12 @@ public static class CorsExtension
             options.AddDefaultPolicy(
                 builder =>
                 {
-                    builder.WithOrigins("https://fun-n-talk-1058570323303.us-central1.run.app")
+                    builder.WithOrigins("https://fun-n-talk-front.vercel.app")
                         .AllowAnyHeader()
                         .AllowCredentials()
                         .AllowAnyMethod();
-                    builder.WithOrigins("https://fun-n-talk-front.vercel.app")
+
+                    builder.WithOrigins("https://funntalk.vicdario.com")
                         .AllowAnyHeader()
                         .AllowCredentials()
                         .AllowAnyMethod();
