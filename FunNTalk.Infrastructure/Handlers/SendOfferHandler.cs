@@ -29,7 +29,7 @@ public sealed class SendOfferHandler(IHubContext<CommunicationHub> hubContext, I
         var userDto = UserDto.FromEntity(user);
         var signalDto = new WebRtcSignalDto(userDto, request.Offer);
 
-        var group = _hubContext.Clients.GroupExcept(user.Room, request.ConnectionId);
-        await group.SendAsync("ReceiveOffer", signalDto, cancellationToken);
+        var client = _hubContext.Clients.Client(request.TargetConnectionId);
+        await client.SendAsync("ReceiveOffer", signalDto, cancellationToken);
     }
 }

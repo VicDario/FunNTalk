@@ -36,18 +36,18 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
         await _mediator.Send(command);
     }
 
-    public async Task SendOffer(WebRtcDto offer)
+    public async Task SendOffer(string targetConnectionId, WebRtcDto offer)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} sends offer to room", connectionId);
-        var command = new SendOfferCommand(connectionId, offer);
+        _logger.LogInformation("Connection {ConnectionId} sends offer to {TargetConnectionId}", connectionId, targetConnectionId);
+        var command = new SendOfferCommand(connectionId, targetConnectionId, offer);
         await _mediator.Send(command);
     }
 
     public async Task SendAnswer(string targetConnectionId, WebRtcDto answer)
     {
         var connectionId = Context.ConnectionId;
-        _logger.LogInformation("Connection {connectionId} sends answer", connectionId);
+        _logger.LogInformation("Connection {connectionId} sends answer to {TargetConnectionId}", connectionId, targetConnectionId);
         var command = new SendAnswerCommand(connectionId, targetConnectionId, answer);
         await _mediator.Send(command);
     }
