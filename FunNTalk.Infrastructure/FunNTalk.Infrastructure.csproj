@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FunNTalk.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
 	  <ProjectReference Include="..\FunNTalk.API\FunNTalk.API.csproj" />
 	  <ProjectReference Include="..\FunNTalk.Domain\FunNTalk.Domain.csproj" />
   </ItemGroup>
