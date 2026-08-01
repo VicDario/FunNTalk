@@ -10,7 +10,7 @@ class GetUsersFromRoomUseCase(IChatRoomRepository chatRoomRepository) : IGetUser
 
     public List<UserDto>? Execute(string roomName)
     {
-        var room = _chatRoomRepository.GetRoom(roomName);
-        return room?.Participants.Select(UserDto.FromEntity).ToList() ?? null;
+        var participants = _chatRoomRepository.GetParticipants(roomName);
+        return participants?.Select(UserDto.FromEntity).ToList();
     }
 }

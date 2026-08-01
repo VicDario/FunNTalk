@@ -1,60 +1,79 @@
 ﻿using FunNTalk.Domain.Entities;
 using FunNTalk.Domain.Repositories;
-using System.Collections.Concurrent;
 
 namespace FunNTalk.Infrastructure.Repositories;
 
+/// <summary>
+/// In-memory room registry. Hub invocations run concurrently and the participant lists are
+/// plain <see cref="List{T}"/>, so every read and write goes through one lock — a concurrent
+/// dictionary would only protect the outer map, not the lists inside it.
+/// </summary>
 public sealed class ChatRoomRepository : IChatRoomRepository
 {
-    private readonly ConcurrentDictionary<string, ChatRoomEntity> _rooms = [];
-    private readonly ConcurrentDictionary<string, UserEntity> _users = [];
+    private readonly Dictionary<string, ChatRoomEntity> _rooms = [];
+    private readonly Dictionary<string, UserEntity> _users = [];
+    private readonly object _gate = new();
 
     public void AddUserToRoom(string roomName, UserEntity user)
     {
-        _users.TryAdd(user.ConnectionId, user);
-        if (_rooms.TryGetValue(roomName, out var room))
+        lock (_gate)
+        {
+            if (!_rooms.TryGetValue(roomName, out var room))
+            {
+                room = new ChatRoomEntity(roomName);
+                _rooms[roomName] = room;
+            }
+
+            // A re-join is authoritative for its connection id, but it must not duplicate the
+            // participant: a duplicate becomes a second video tile that nobody ever closes.
+            _users[user.ConnectionId] = user;
+            if (room.Participants.Exists(participant => participant.ConnectionId == user.ConnectionId)) return;
+
             room.Participants.Add(user);
-        else
-            CreateRoom(roomName, user);
+        }
     }
 
-    public ChatRoomEntity? GetRoom(string roomName)
+    public IReadOnlyList<UserEntity>? GetParticipants(string roomName)
     {
-        _rooms.TryGetValue(roomName, out var room);
-        return room;
+        lock (_gate)
+        {
+            return _rooms.TryGetValue(roomName, out var room) ? [.. room.Participants] : null;
+        }
     }
 
     public UserEntity? RemoveUserFromRoom(string roomName, string connectionId)
     {
-        _rooms.TryGetValue(roomName, out var room);
-        var user = room?.Participants.Find(participant => participant.ConnectionId == connectionId);
-        if (user is null) return null;
-        room?.Participants.Remove(user);
-        if (room?.Participants.Count == 0)
-            RemoveRoom(roomName);
-        _users.TryRemove(connectionId, out _);
-        return user;
+        lock (_gate)
+        {
+            if (!_rooms.TryGetValue(roomName, out var room)) return null;
+
+            var user = room.Participants.Find(participant => participant.ConnectionId == connectionId);
+            if (user is null) return null;
+
+            room.Participants.Remove(user);
+            if (room.Participants.Count == 0) _rooms.Remove(roomName);
+            _users.Remove(connectionId);
+
+            return user;
+        }
     }
 
     public UserEntity? GetUserFromRoom(string roomName, string connectionId)
     {
-        var room = GetRoom(roomName);
-        return room?.Participants.FirstOrDefault(participant => participant.ConnectionId == connectionId);
+        lock (_gate)
+        {
+            return _rooms.TryGetValue(roomName, out var room)
+                ? room.Participants.Find(participant => participant.ConnectionId == connectionId)
+                : null;
+        }
     }
 
     public UserEntity? GetUser(string connectionId)
     {
-        _users.TryGetValue(connectionId, out var user);
-        return user;
-    }
-
-    private void CreateRoom(string roomName, UserEntity user)
-    {
-        _rooms.TryAdd(roomName, new ChatRoomEntity(roomName) { Participants = [user] });
-    }
-
-    private void RemoveRoom(string roomName)
-    {
-        _rooms.TryRemove(roomName, out _);
+        lock (_gate)
+        {
+            _users.TryGetValue(connectionId, out var user);
+            return user;
+        }
     }
 }
