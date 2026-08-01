@@ -20,5 +20,6 @@ public static class Extensions
         services.ConfigureSignalR();
         services.AddLogging();
         services.ConfigureCors();
+        services.ConfigureRateLimiting();
     }
 }
