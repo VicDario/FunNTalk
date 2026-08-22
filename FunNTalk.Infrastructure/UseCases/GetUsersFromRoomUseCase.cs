@@ -1,4 +1,5 @@
 ﻿using FunNTalk.Domain.DTOs;
+using FunNTalk.Domain.Extensions;
 using FunNTalk.Domain.Repositories;
 using FunNTalk.Domain.UseCases;
 
@@ -10,7 +11,7 @@ class GetUsersFromRoomUseCase(IChatRoomRepository chatRoomRepository) : IGetUser
 
     public List<UserDto>? Execute(string roomName)
     {
-        var participants = _chatRoomRepository.GetParticipants(roomName);
+        var participants = _chatRoomRepository.GetParticipants(roomName.NormalizeRoomCode());
         return participants?.Select(UserDto.FromEntity).ToList();
     }
 }
