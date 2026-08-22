@@ -25,6 +25,15 @@ public class JoinRoomHandlerTests
         _handler = new JoinRoomHandler(_hub.HubContext, _repository);
     }
 
+    /// <summary>
+    /// NSubstitute returns false for an unconfigured bool method, so every test below that
+    /// exercises a successful join needs this arranged — except the rejection test, which
+    /// overrides it with its own <c>.Returns(false)</c>.
+    /// </summary>
+    [TestInitialize]
+    public void GivenTheRoomAcceptsTheJoiningUser() =>
+        _repository.AddUserToRoom(Room, Arg.Any<UserEntity>()).Returns(true);
+
     [TestMethod]
     public async Task Handle_AddsTheUserToTheRepositoryAndToTheSignalRGroup()
     {
@@ -61,17 +70,18 @@ public class JoinRoomHandlerTests
     }
 
     [TestMethod]
-    public async Task Handle_FirstJoinIntoARoomThatDoesNotExistYet_DoesNotThrow()
+    public async Task Handle_JoinIntoARoomThatDoesNotExist_ThrowsAndCreatesNothing()
     {
         var user = new UserEntity("alice", NewConnection, Room);
-        _repository.GetParticipants(Room).Returns((IReadOnlyList<UserEntity>?)null);
+        _repository.AddUserToRoom(Room, user).Returns(false);
         var groupExcept = _hub.StubGroupExcept(Room);
 
-        await _handler.Handle(new JoinRoomCommand(Room, user), CancellationToken.None);
+        await Assert.ThrowsExactlyAsync<HubException>(
+            () => _handler.Handle(new JoinRoomCommand(Room, user), CancellationToken.None));
 
-        _repository.Received(1).AddUserToRoom(Room, user);
-        await groupExcept.Received(1).SendCoreAsync("UserJoined", Arg.Any<object?[]>(), Arg.Any<CancellationToken>());
-        _repository.DidNotReceive().RemoveUserFromRoom(Arg.Any<string>(), Arg.Any<string>());
+        _repository.DidNotReceive().TryCreateRoom(Arg.Any<string>());
+        await groupExcept.DidNotReceive().SendCoreAsync(
+            "UserJoined", Arg.Any<object?[]>(), Arg.Any<CancellationToken>());
     }
 
     [TestMethod]

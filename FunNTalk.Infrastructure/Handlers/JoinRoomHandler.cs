@@ -18,7 +18,13 @@ public sealed class JoinRoomHandler(IHubContext<CommunicationHub> hubContext, IC
     {
         await EvictStaleConnectionsAsync(request, cancellationToken);
 
-        _chatRoomRepository.AddUserToRoom(request.RoomName, request.User);
+        // Joining never creates a room: an unknown or expired code must be rejected, not
+        // silently turned into a fresh room.
+        if (!_chatRoomRepository.AddUserToRoom(request.RoomName, request.User))
+        {
+            throw new HubException("Room not found.");
+        }
+
         await _hubContext.Groups.AddToGroupAsync(request.User.ConnectionId, request.RoomName, cancellationToken);
 
         var userDto = UserDto.FromEntity(request.User);
