@@ -18,7 +18,7 @@ public class CommunicationHubTests
 {
     private const string Caller = "connection-caller";
     private const string Target = "connection-target";
-    private const string Room = "room-a";
+    private const string Room = "A4K9X2";
 
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly CommunicationHub _hub;
@@ -48,6 +48,33 @@ public class CommunicationHubTests
                 && command.User.ConnectionId == Caller
                 && command.User.Room == Room),
             Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task JoinRoom_NormalizesTheCodeBeforeDispatchingTheCommand()
+    {
+        await _hub.JoinRoom(" a4k9x2 ", "alice");
+
+        await _mediator.Received(1).Send(
+            Arg.Is<JoinRoomCommand>(command => command.RoomName == "A4K9X2"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    [DataRow("hello!")]
+    [DataRow("AB")]
+    [DataRow("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
+    [DataRow("A4K9XU")]
+    public async Task JoinRoom_WithAMalformedCode_ThrowsWithoutDispatchingACommand(string malformedCode)
+    {
+        var exception = await Assert.ThrowsExactlyAsync<HubException>(
+            () => _hub.JoinRoom(malformedCode, "alice"));
+
+        Assert.AreEqual("Invalid room code.", exception.Message);
+        // The two rejection paths must stay distinguishable — this is not the handler's
+        // not-found message, which is asserted separately in JoinRoomHandlerTests.
+        Assert.AreNotEqual("Room not found.", exception.Message);
+        await _mediator.DidNotReceive().Send(Arg.Any<JoinRoomCommand>(), Arg.Any<CancellationToken>());
     }
 
     [TestMethod]

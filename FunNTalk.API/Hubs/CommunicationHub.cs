@@ -1,5 +1,6 @@
 ﻿using FunNTalk.Domain.Entities;
 using FunNTalk.API.Commands;
+using FunNTalk.Domain.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -14,10 +15,17 @@ public class CommunicationHub(IMediator mediator, ILogger<CommunicationHub> logg
 
     public async Task JoinRoom(string roomName, string username)
     {
-        _logger.LogInformation("user {username} joins to room {roomName}", username, roomName);
+        // Normalize before validating shape: folding confusable glyphs is what makes
+        // legitimate input shape-valid in the first place. The group name is also derived
+        // from this normalized code, so two callers typing different cases must resolve to
+        // the same group.
+        var code = roomName.NormalizeRoomCode();
+        if (!code.IsWellFormedRoomCode()) throw new HubException("Invalid room code.");
+
+        _logger.LogInformation("user {username} joins to room {roomName}", username, code);
         var connectionId = Context.ConnectionId;
-        var user = new UserEntity(username, connectionId, roomName);
-        await _mediator.Send(new JoinRoomCommand(roomName, user));
+        var user = new UserEntity(username, connectionId, code);
+        await _mediator.Send(new JoinRoomCommand(code, user));
     }
 
     public async Task SendMessage(string message)
