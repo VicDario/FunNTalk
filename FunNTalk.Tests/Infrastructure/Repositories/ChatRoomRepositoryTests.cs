@@ -1,5 +1,6 @@
 using FunNTalk.Domain.Entities;
 using FunNTalk.Infrastructure.Repositories;
+using FunNTalk.Tests.TestDoubles;
 
 namespace FunNTalk.Tests.Infrastructure.Repositories;
 
@@ -8,18 +9,85 @@ public class ChatRoomRepositoryTests
 {
     private const string Room = "room-a";
 
-    private readonly ChatRoomRepository _repository = new();
+    private readonly MutableTimeProvider _time = new(DateTimeOffset.UtcNow);
+    private readonly ChatRoomRepository _repository;
+
+    public ChatRoomRepositoryTests()
+    {
+        _repository = new ChatRoomRepository(_time);
+    }
+
+    [TestInitialize]
+    public void GivenRoomAAndRoomBAlreadyExist()
+    {
+        _repository.TryCreateRoom("room-a");
+        _repository.TryCreateRoom("room-b");
+    }
 
     [TestMethod]
-    public void AddUserToRoom_CreatesTheRoomAndRegistersTheParticipant()
+    public void TryCreateRoom_CreatesAVacantRoom()
+    {
+        Assert.IsTrue(_repository.TryCreateRoom("new-room"));
+
+        var participants = _repository.GetParticipants("new-room");
+        Assert.IsNotNull(participants);
+        Assert.IsEmpty(participants);
+    }
+
+    [TestMethod]
+    public void TryCreateRoom_ReturnsFalse_WhenTheCodeIsAlreadyLive()
+    {
+        Assert.IsFalse(_repository.TryCreateRoom(Room));
+    }
+
+    [TestMethod]
+    public void TryCreateRoom_ParallelCreation_NeverIssuesTheSameCodeTwice()
+    {
+        const int attempts = 500;
+        var successfulCodes = new System.Collections.Concurrent.ConcurrentBag<string>();
+
+        Parallel.For(0, attempts, index =>
+        {
+            var code = $"code-{index}";
+            if (_repository.TryCreateRoom(code)) successfulCodes.Add(code);
+        });
+
+        Assert.HasCount(attempts, successfulCodes.Distinct());
+    }
+
+    [TestMethod]
+    public void AddUserToRoom_RegistersTheParticipantOfAnExistingRoom()
     {
         var user = new UserEntity("alice", "connection-1", Room);
 
-        _repository.AddUserToRoom(Room, user);
+        Assert.IsTrue(_repository.AddUserToRoom(Room, user));
 
         var participants = _repository.GetParticipants(Room);
         Assert.IsNotNull(participants);
         Assert.AreSame(user, Assert.ContainsSingle(participants));
+    }
+
+    [TestMethod]
+    public void AddUserToRoom_ReturnsFalseAndRegistersNothing_ForARoomThatWasNeverCreated()
+    {
+        var user = new UserEntity("alice", "connection-1", "never-created");
+
+        Assert.IsFalse(_repository.AddUserToRoom("never-created", user));
+        Assert.IsNull(_repository.GetParticipants("never-created"));
+    }
+
+    [TestMethod]
+    public void AddUserToRoom_ClearsTheVacancyStampWhenAParticipantJoins()
+    {
+        var ttl = TimeSpan.FromMinutes(10);
+
+        _repository.AddUserToRoom(Room, new UserEntity("alice", "connection-1", Room));
+        _time.Advance(ttl);
+        _repository.ReapVacantRooms(ttl);
+
+        // Room was vacant since TestInitialize's TryCreateRoom, but joining cleared the stamp,
+        // so the sweep above must not have reclaimed it.
+        Assert.IsNotNull(_repository.GetParticipants(Room));
     }
 
     [TestMethod]
@@ -92,13 +160,32 @@ public class ChatRoomRepositoryTests
     }
 
     [TestMethod]
-    public void RemoveUserFromRoom_RemovingTheLastParticipant_RemovesTheRoom()
+    public void RemoveUserFromRoom_KeepsTheRoomVacantUntilTheTtlElapses()
     {
+        var ttl = TimeSpan.FromMinutes(10);
         _repository.AddUserToRoom(Room, new UserEntity("alice", "connection-1", Room));
 
         _repository.RemoveUserFromRoom(Room, "connection-1");
 
+        Assert.IsEmpty(_repository.GetParticipants(Room)!);
+
+        _time.Advance(ttl);
+        _repository.ReapVacantRooms(ttl);
+
         Assert.IsNull(_repository.GetParticipants(Room));
+    }
+
+    [TestMethod]
+    public void ReapVacantRooms_DoesNotReclaim_OneTickBeforeTheTtlElapses()
+    {
+        var ttl = TimeSpan.FromMinutes(10);
+        _repository.AddUserToRoom(Room, new UserEntity("alice", "connection-1", Room));
+        _repository.RemoveUserFromRoom(Room, "connection-1");
+
+        _time.Advance(ttl - TimeSpan.FromSeconds(1));
+        _repository.ReapVacantRooms(ttl);
+
+        Assert.IsNotNull(_repository.GetParticipants(Room));
     }
 
     [TestMethod]

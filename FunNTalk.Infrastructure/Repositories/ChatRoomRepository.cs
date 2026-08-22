@@ -1,4 +1,4 @@
-﻿using FunNTalk.Domain.Entities;
+using FunNTalk.Domain.Entities;
 using FunNTalk.Domain.Repositories;
 
 namespace FunNTalk.Infrastructure.Repositories;
@@ -8,28 +8,38 @@ namespace FunNTalk.Infrastructure.Repositories;
 /// plain <see cref="List{T}"/>, so every read and write goes through one lock — a concurrent
 /// dictionary would only protect the outer map, not the lists inside it.
 /// </summary>
-public sealed class ChatRoomRepository : IChatRoomRepository
+public sealed class ChatRoomRepository(TimeProvider timeProvider) : IChatRoomRepository
 {
     private readonly Dictionary<string, ChatRoomEntity> _rooms = [];
     private readonly Dictionary<string, UserEntity> _users = [];
     private readonly object _gate = new();
+    private readonly TimeProvider _timeProvider = timeProvider;
 
-    public void AddUserToRoom(string roomName, UserEntity user)
+    public bool TryCreateRoom(string roomName)
     {
         lock (_gate)
         {
-            if (!_rooms.TryGetValue(roomName, out var room))
-            {
-                room = new ChatRoomEntity(roomName);
-                _rooms[roomName] = room;
-            }
+            if (_rooms.ContainsKey(roomName)) return false;
+
+            _rooms[roomName] = new ChatRoomEntity(roomName) { VacantSince = _timeProvider.GetUtcNow() };
+            return true;
+        }
+    }
+
+    public bool AddUserToRoom(string roomName, UserEntity user)
+    {
+        lock (_gate)
+        {
+            if (!_rooms.TryGetValue(roomName, out var room)) return false;
 
             // A re-join is authoritative for its connection id, but it must not duplicate the
             // participant: a duplicate becomes a second video tile that nobody ever closes.
             _users[user.ConnectionId] = user;
-            if (room.Participants.Exists(participant => participant.ConnectionId == user.ConnectionId)) return;
+            room.VacantSince = null;
+            if (room.Participants.Exists(participant => participant.ConnectionId == user.ConnectionId)) return true;
 
             room.Participants.Add(user);
+            return true;
         }
     }
 
@@ -51,7 +61,7 @@ public sealed class ChatRoomRepository : IChatRoomRepository
             if (user is null) return null;
 
             room.Participants.Remove(user);
-            if (room.Participants.Count == 0) _rooms.Remove(roomName);
+            if (room.Participants.Count == 0) room.VacantSince = _timeProvider.GetUtcNow();
             _users.Remove(connectionId);
 
             return user;
@@ -74,6 +84,22 @@ public sealed class ChatRoomRepository : IChatRoomRepository
         {
             _users.TryGetValue(connectionId, out var user);
             return user;
+        }
+    }
+
+    public int ReapVacantRooms(TimeSpan vacancyTtl)
+    {
+        lock (_gate)
+        {
+            var now = _timeProvider.GetUtcNow();
+            var expired = _rooms
+                .Where(entry => entry.Value.VacantSince is { } vacantSince && now - vacantSince >= vacancyTtl)
+                .Select(entry => entry.Key)
+                .ToList();
+
+            foreach (var roomName in expired) _rooms.Remove(roomName);
+
+            return expired.Count;
         }
     }
 }
