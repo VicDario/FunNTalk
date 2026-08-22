@@ -1,4 +1,5 @@
 ﻿using FunNTalk.API.Extensions;
+using FunNTalk.Domain.DTOs;
 using FunNTalk.Domain.UseCases;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,10 +10,12 @@ namespace FunNTalk.API.Controllers;
 [Route("api/[controller]")]
 public sealed class CommunicationController(
     IGetUsersFromRoomUseCase getUsersFromRoomUseCase,
-    IGetIceServersUseCase getIceServersUseCase) : ControllerBase
+    IGetIceServersUseCase getIceServersUseCase,
+    ICreateRoomUseCase createRoomUseCase) : ControllerBase
 {
     private readonly IGetUsersFromRoomUseCase _getUsersFromRoomUseCase = getUsersFromRoomUseCase;
     private readonly IGetIceServersUseCase _getIceServersUseCase = getIceServersUseCase;
+    private readonly ICreateRoomUseCase _createRoomUseCase = createRoomUseCase;
 
     [HttpGet]
     [Route("room/{roomName}/participants")]
@@ -23,6 +26,21 @@ public sealed class CommunicationController(
         if (users == null) return NotFound(new { Message = $"No users found for room {roomName}." });
 
         return Ok(users);
+    }
+
+    [HttpPost]
+    [Route("rooms")]
+    [EnableRateLimiting(RateLimitingExtension.CreateRoomPolicy)]
+    public IActionResult CreateRoom()
+    {
+        var code = _createRoomUseCase.Execute();
+
+        if (code is null)
+        {
+            return StatusCode(503, new { Message = "Could not allocate a room code. Try again." });
+        }
+
+        return Ok(new RoomDto(code));
     }
 
     /// <summary>

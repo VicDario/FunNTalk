@@ -14,12 +14,27 @@ public static class RateLimitingExtension
     /// </summary>
     public const string IceServersPolicy = "ice-servers";
 
+    /// <summary>
+    /// The create-room endpoint is unauthenticated, so a per-IP limit is what stands between a
+    /// script and mass room creation. Mirrors <see cref="IceServersPolicy"/>'s shape.
+    /// </summary>
+    public const string CreateRoomPolicy = "create-room";
+
     public static void ConfigureRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy(IceServersPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    }));
+            options.AddPolicy(CreateRoomPolicy, httpContext =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions

@@ -13,11 +13,12 @@ public class CommunicationControllerTests
 
     private readonly IGetUsersFromRoomUseCase _getUsersFromRoom = Substitute.For<IGetUsersFromRoomUseCase>();
     private readonly IGetIceServersUseCase _getIceServers = Substitute.For<IGetIceServersUseCase>();
+    private readonly ICreateRoomUseCase _createRoom = Substitute.For<ICreateRoomUseCase>();
     private readonly CommunicationController _controller;
 
     public CommunicationControllerTests()
     {
-        _controller = new CommunicationController(_getUsersFromRoom, _getIceServers);
+        _controller = new CommunicationController(_getUsersFromRoom, _getIceServers, _createRoom);
     }
 
     [TestMethod]
@@ -51,6 +52,28 @@ public class CommunicationControllerTests
 
         var notFound = Assert.IsInstanceOfType<NotFoundObjectResult>(result);
         Assert.IsNotNull(notFound.Value);
+    }
+
+    [TestMethod]
+    public void CreateRoom_ReturnsOkWithTheMintedCode()
+    {
+        _createRoom.Execute().Returns("A4K9X2");
+
+        var result = _controller.CreateRoom();
+
+        var ok = Assert.IsInstanceOfType<OkObjectResult>(result);
+        Assert.AreEqual(new RoomDto("A4K9X2"), ok.Value);
+    }
+
+    [TestMethod]
+    public void CreateRoom_WhenCodeSpaceIsExhausted_Returns503()
+    {
+        _createRoom.Execute().Returns((string?)null);
+
+        var result = _controller.CreateRoom();
+
+        var objectResult = Assert.IsInstanceOfType<ObjectResult>(result);
+        Assert.AreEqual(503, objectResult.StatusCode);
     }
 
     [TestMethod]
