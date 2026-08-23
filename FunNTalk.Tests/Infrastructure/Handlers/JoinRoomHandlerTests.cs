@@ -76,9 +76,10 @@ public class JoinRoomHandlerTests
         _repository.AddUserToRoom(Room, user).Returns(false);
         var groupExcept = _hub.StubGroupExcept(Room);
 
-        await Assert.ThrowsExactlyAsync<HubException>(
+        var exception = await Assert.ThrowsExactlyAsync<HubException>(
             () => _handler.Handle(new JoinRoomCommand(Room, user), CancellationToken.None));
 
+        Assert.AreEqual("Room not found.", exception.Message);
         _repository.DidNotReceive().TryCreateRoom(Arg.Any<string>());
         await groupExcept.DidNotReceive().SendCoreAsync(
             "UserJoined", Arg.Any<object?[]>(), Arg.Any<CancellationToken>());

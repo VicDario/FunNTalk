@@ -1,6 +1,10 @@
 using FunNTalk.API.Commands;
 using FunNTalk.API.Hubs;
 using FunNTalk.Domain.DTOs;
+using FunNTalk.Domain.Entities;
+using FunNTalk.Infrastructure.Handlers;
+using FunNTalk.Infrastructure.Repositories;
+using FunNTalk.Tests.TestDoubles;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -71,10 +75,27 @@ public class CommunicationHubTests
             () => _hub.JoinRoom(malformedCode, "alice"));
 
         Assert.AreEqual("Invalid room code.", exception.Message);
-        // The two rejection paths must stay distinguishable — this is not the handler's
-        // not-found message, which is asserted separately in JoinRoomHandlerTests.
-        Assert.AreNotEqual("Room not found.", exception.Message);
         await _mediator.DidNotReceive().Send(Arg.Any<JoinRoomCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>
+    /// The spec requires the two rejection paths to stay distinguishable. Comparing either
+    /// message against a hard-coded literal proves nothing — both actual messages must be
+    /// observed and compared against each other, so this fails the moment someone makes the
+    /// handler's not-found message match the hub's malformed-code message.
+    /// </summary>
+    [TestMethod]
+    public async Task JoinRoom_MalformedCodeRejection_IsDistinctFromTheHandlersUnknownCodeRejection()
+    {
+        var malformed = await Assert.ThrowsExactlyAsync<HubException>(
+            () => _hub.JoinRoom("hello!", "alice"));
+
+        var handler = new JoinRoomHandler(new HubContextHarness().HubContext, new ChatRoomRepository(TimeProvider.System));
+        var user = new UserEntity("alice", "connection-new", "UNKNOWN");
+        var unknown = await Assert.ThrowsExactlyAsync<HubException>(
+            () => handler.Handle(new JoinRoomCommand("UNKNOWN", user), CancellationToken.None));
+
+        Assert.AreNotEqual(malformed.Message, unknown.Message);
     }
 
     [TestMethod]

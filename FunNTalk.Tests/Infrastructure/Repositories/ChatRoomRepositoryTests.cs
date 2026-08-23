@@ -34,6 +34,25 @@ public class ChatRoomRepositoryTests
         Assert.IsEmpty(participants);
     }
 
+    /// <summary>
+    /// This is the leak the whole feature exists to prevent: a room nobody ever joined must not
+    /// sit forever. It only reclaims because <see cref="ChatRoomRepository.TryCreateRoom"/> stamps
+    /// <c>VacantSince</c> at creation time, not just on departure — if that stamp were dropped,
+    /// this sweep would find nothing to reclaim and the assertion below would fail.
+    /// </summary>
+    [TestMethod]
+    public void TryCreateRoom_ANeverJoinedRoom_IsReclaimedAfterTheTtlAndItsCodeBecomesMintableAgain()
+    {
+        var ttl = TimeSpan.FromMinutes(10);
+        Assert.IsTrue(_repository.TryCreateRoom("never-joined"));
+
+        _time.Advance(ttl);
+        _repository.ReapVacantRooms(ttl);
+
+        Assert.IsNull(_repository.GetParticipants("never-joined"));
+        Assert.IsTrue(_repository.TryCreateRoom("never-joined"));
+    }
+
     [TestMethod]
     public void TryCreateRoom_ReturnsFalse_WhenTheCodeIsAlreadyLive()
     {
@@ -173,6 +192,27 @@ public class ChatRoomRepositoryTests
         _repository.ReapVacantRooms(ttl);
 
         Assert.IsNull(_repository.GetParticipants(Room));
+    }
+
+    /// <summary>
+    /// Direct assertion of the reconnect-in-the-window guarantee: a solo participant departs,
+    /// rejoins with a NEW connection id inside the TTL, and the room must still survive a sweep
+    /// that runs after the original departure's TTL would otherwise have expired.
+    /// </summary>
+    [TestMethod]
+    public void RemoveThenAddWithANewConnectionId_InsideTheTtl_KeepsTheRoomAliveThroughALaterSweep()
+    {
+        var ttl = TimeSpan.FromMinutes(10);
+        _repository.AddUserToRoom(Room, new UserEntity("alice", "connection-1", Room));
+
+        _repository.RemoveUserFromRoom(Room, "connection-1");
+        _time.Advance(ttl - TimeSpan.FromSeconds(1));
+        _repository.AddUserToRoom(Room, new UserEntity("alice", "connection-2", Room));
+
+        _time.Advance(ttl);
+        _repository.ReapVacantRooms(ttl);
+
+        Assert.IsNotNull(_repository.GetParticipants(Room));
     }
 
     [TestMethod]
