@@ -17,7 +17,11 @@ public sealed class SendICECandidateHandler(IHubContext<CommunicationHub> hubCon
 
     public async Task Handle(SendICECandidateCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Sending WebRTC ICE candidate from {ConnectionId}", request.ConnectionId);
+        _logger.LogInformation(
+            "Sending WebRTC ICE candidate from {ConnectionId} to {TargetConnectionId}",
+            request.ConnectionId,
+            request.TargetConnectionId);
+
         var user = _chatRoomRepository.GetUser(request.ConnectionId);
         if (user == null)
         {
@@ -26,9 +30,13 @@ public sealed class SendICECandidateHandler(IHubContext<CommunicationHub> hubCon
         }
 
         var userDto = UserDto.FromEntity(user);
+
+        // The candidate arrives already JSON-stringified and is relayed as an opaque string:
+        // the receiving client runs JSON.parse on it, which throws if it is re-serialized as
+        // an object, and every candidate is silently lost.
         var signalDto = new WebRtcCandidate(userDto, request.Candidate);
 
-        var group = _hubContext.Clients.GroupExcept(user.Room, request.ConnectionId);
-        await group.SendAsync("ReceiveICECandidate", signalDto, cancellationToken);
+        var client = _hubContext.Clients.Client(request.TargetConnectionId);
+        await client.SendAsync("ReceiveICECandidate", signalDto, cancellationToken);
     }
 }

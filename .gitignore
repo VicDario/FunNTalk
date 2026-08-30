@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Local agent tooling state (not the Microsoft ATL section above)
+.atl/
+.codegraph/

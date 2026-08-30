@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="FunNTalk.API/FunNTalk.API.csproj" />
+  <Project Path="FunNTalk.Domain/FunNTalk.Domain.csproj" />
+  <Project Path="FunNTalk.Infrastructure/FunNTalk.Infrastructure.csproj" />
+  <Project Path="FunNTalk.Tests/FunNTalk.Tests.csproj" />
+  <Project Path="FunNTalk/FunNTalk.csproj" />
+</Solution>

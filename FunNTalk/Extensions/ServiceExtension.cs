@@ -5,9 +5,9 @@ namespace FunNTalk.Extensions;
 
 public static class ServiceExtension
 {
-    public static void AppConfigure(this IServiceCollection services)
+    public static void AppConfigure(this IServiceCollection services, IConfiguration configuration)
     {
         services.ApiConfigure();
-        services.InfrastructureConfigure();
+        services.InfrastructureConfigure(configuration);
     }
 }
