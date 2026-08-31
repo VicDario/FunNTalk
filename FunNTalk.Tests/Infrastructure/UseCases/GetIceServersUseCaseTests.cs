@@ -14,6 +14,17 @@ public class GetIceServersUseCaseTests
     private const string Stun = "stun:stun.l.google.com:19302";
     private const string Turn = "turn:relay.example.com:80";
 
+    private const string MintPayload =
+        """
+        {
+          "username": "minted-user",
+          "password": "minted-secret",
+          "expiryInSeconds": 7200,
+          "label": "funntalk",
+          "apiKey": "minted-api-key"
+        }
+        """;
+
     private const string ProviderPayload =
         """
         [
@@ -163,6 +174,126 @@ public class GetIceServersUseCaseTests
 
         AssertStunOnly(await useCase.ExecuteAsync());
     }
+
+    [TestMethod]
+    public async Task ExecuteAsync_WithASecretKey_MintsACredentialThenRedeemsItForTheIceServers()
+    {
+        var handler = MintingHandler();
+
+        var servers = await CreateUseCase(handler, MintingOptions()).ExecuteAsync();
+
+        Assert.AreEqual(2, handler.CallCount);
+        Assert.Contains(
+            "/api/v1/turn/credential?secretKey=a-secret-key",
+            handler.RequestedUris[0]!.ToString(),
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "/api/v1/turn/credentials?apiKey=minted-api-key",
+            handler.RequestedUris[1]!.ToString(),
+            StringComparison.Ordinal);
+        Assert.IsTrue(servers.Any(server => server.Urls == Turn && server.Credential is not null));
+    }
+
+    [TestMethod]
+    public async Task ExecuteAsync_WithASecretKey_AsksForTheConfiguredExpiry()
+    {
+        var handler = MintingHandler();
+        var options = MintingOptions();
+        options.Metered.CredentialTtlSeconds = 900;
+
+        await CreateUseCase(handler, options).ExecuteAsync();
+
+        Assert.Contains("900", handler.RequestBodies[0], StringComparison.Ordinal);
+        Assert.Contains("expiryInSeconds", handler.RequestBodies[0], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The standing API key must play no part once minting is available: redeeming it instead of
+    /// the minted one would hand the browser a credential that never expires, which is the whole
+    /// defect this path exists to close.
+    /// </summary>
+    [TestMethod]
+    public async Task ExecuteAsync_WithASecretKey_RedeemsTheMintedKeyRatherThanTheStandingApiKey()
+    {
+        var handler = MintingHandler();
+        var options = MintingOptions();
+        options.Metered.ApiKey = "the-standing-api-key";
+
+        await CreateUseCase(handler, options).ExecuteAsync();
+
+        var redeemUri = handler.RequestedUris[1]!.ToString();
+        Assert.Contains("apiKey=minted-api-key", redeemUri, StringComparison.Ordinal);
+        Assert.DoesNotContain("the-standing-api-key", redeemUri, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Regression guard for deployments that only ever had an API key: they must keep working,
+    /// degraded but functional, rather than losing TURN the moment this path ships.
+    /// </summary>
+    [TestMethod]
+    public async Task ExecuteAsync_WithoutASecretKey_StillUsesTheStandingCredentialPath()
+    {
+        var handler = FakeHttpMessageHandler.RespondingWithJson(ProviderPayload);
+
+        var servers = await CreateUseCase(handler, ConfiguredOptions()).ExecuteAsync();
+
+        var requestUri = Assert.ContainsSingle(handler.RequestedUris);
+        Assert.Contains("apiKey=an-api-key", requestUri!.ToString(), StringComparison.Ordinal);
+        Assert.IsTrue(servers.Any(server => server.Urls == Turn));
+    }
+
+    [TestMethod]
+    public async Task ExecuteAsync_WithASecretKeyButNoSubdomain_MakesNoProviderCall()
+    {
+        var handler = FakeHttpMessageHandler.Throwing(
+            new InvalidOperationException("Without a subdomain there is no host to call."));
+        var options = new IceServerOptions
+        {
+            StunUrls = [Stun],
+            Metered = new IceServerOptions.MeteredOptions { SecretKey = "a-secret-key" },
+        };
+
+        AssertStunOnly(await CreateUseCase(handler, options).ExecuteAsync());
+        Assert.AreEqual(0, handler.CallCount);
+    }
+
+    [TestMethod]
+    public async Task ExecuteAsync_WhenMintingFailsWithAServerError_FallsBackToStunOnly()
+    {
+        var handler = FakeHttpMessageHandler.Responding(HttpStatusCode.Unauthorized, "authorization failed");
+
+        AssertStunOnly(await CreateUseCase(handler, MintingOptions()).ExecuteAsync());
+        Assert.AreEqual(1, handler.CallCount);
+    }
+
+    /// <summary>
+    /// A 200 that carries no apiKey is not a usable credential. Redeeming the empty value would
+    /// send a malformed request instead of failing where the fault actually is.
+    /// </summary>
+    [TestMethod]
+    public async Task ExecuteAsync_WhenTheMintResponseOmitsTheApiKey_FallsBackToStunOnly()
+    {
+        var handler = FakeHttpMessageHandler.RespondingWithJson("""{ "username": "u", "password": "p" }""");
+
+        AssertStunOnly(await CreateUseCase(handler, MintingOptions()).ExecuteAsync());
+        Assert.AreEqual(1, handler.CallCount);
+    }
+
+    private static FakeHttpMessageHandler MintingHandler() =>
+        FakeHttpMessageHandler.RespondingPerRequest(request => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(request.Method == HttpMethod.Post ? MintPayload : ProviderPayload),
+        });
+
+    private static IceServerOptions MintingOptions() => new()
+    {
+        StunUrls = [Stun],
+        Metered = new IceServerOptions.MeteredOptions
+        {
+            Subdomain = "funntalk",
+            SecretKey = "a-secret-key",
+        },
+    };
 
     private static void AssertStunOnly(IReadOnlyList<IceServerDto> servers)
     {
