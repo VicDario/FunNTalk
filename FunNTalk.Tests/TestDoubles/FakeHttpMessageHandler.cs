@@ -18,6 +18,9 @@ internal sealed class FakeHttpMessageHandler : HttpMessageHandler
 
     public List<Uri?> RequestedUris { get; } = [];
 
+    /// <summary>Request bodies in the same order as <see cref="RequestedUris"/>; empty for a GET.</summary>
+    public List<string> RequestBodies { get; } = [];
+
     public int CallCount => RequestedUris.Count;
 
     public static FakeHttpMessageHandler Responding(HttpStatusCode statusCode, string content) =>
@@ -32,11 +35,20 @@ internal sealed class FakeHttpMessageHandler : HttpMessageHandler
     public static FakeHttpMessageHandler Throwing(Exception exception) =>
         new(_ => throw exception);
 
+    /// <summary>
+    /// Lets one handler answer a multi-step exchange differently per request, which the
+    /// mint-then-fetch flow needs: a POST that creates a credential, then a GET that redeems it.
+    /// </summary>
+    public static FakeHttpMessageHandler RespondingPerRequest(
+        Func<HttpRequestMessage, HttpResponseMessage> responder) => new(responder);
+
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         RequestedUris.Add(request.RequestUri);
+        RequestBodies.Add(
+            request.Content?.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult() ?? string.Empty);
         return Task.FromResult(_responder(request));
     }
 }
